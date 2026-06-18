@@ -157,6 +157,22 @@
         <input type="submit" value="Reserve Book">
 
     </form>
+    <hr>
+<h2>Current Book Reservations</h2>
+<table id="reservationTable" border="1" style="width:100%; border-collapse: collapse; text-align: left; margin-top: 20px;">
+  <thead>
+    <tr style="background-color: #f2f2f2;">
+      <th style="padding: 8px;">Name</th>
+      <th style="padding: 8px;">Email</th>
+      <th style="padding: 8px;">Book</th>
+      <th style="padding: 8px;">Date</th>
+      <th style="padding: 8px;">Comments</th>
+      <th style="padding: 8px;">Action</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody">
+    </tbody>
+</table>
 
     <br><br>
 
@@ -167,6 +183,64 @@
             Thank you for visiting Online Book Reader Corner.
         </font>
     </center>
+    <script>
+  // REPLACE THIS LINK with your exact Google Web App URL link from Apps Script
+  const scriptUrl = "https://script.google.com/macros/s/AKfycby2N478Q-BA5nqLZ9fSmvK3eP4PAAMXxvrYW_U1mrdq0b6JX3ByNUGa2-Zoc8sVd9gHtA/exec";
 
-</body>
+  // Function to load data from Google Sheet into the table
+  function loadTableData() {
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '<tr><td colspan="6" style="padding: 8px; text-align: center;">Loading reservations...</td></tr>';
+
+    fetch(scriptUrl)
+      .then(response => response.json())
+      .then(data => {
+        tableBody.innerHTML = ''; // Clear loading message
+        
+        if (data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" style="padding: 8px; text-align: center;">No reservations found.</td></tr>';
+          return;
+        }
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="padding: 8px;">${row.fullName}</td>
+            <td style="padding: 8px;">${row.email}</td>
+            <td style="padding: 8px;">${row.book}</td>
+            <td style="padding: 8px;">${row.resDate}</td>
+            <td style="padding: 8px;">${row.comments}</td>
+            <td style="padding: 8px;">
+              <button onclick="deleteRow(${row.rowIndex})" style="background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;">Delete</button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading data:', error);
+        tableBody.innerHTML = '<tr><td colspan="6" style="padding: 8px; text-align: center; color: red;">Error loading reservations.</td></tr>';
+      });
+  }
+
+  // Function to delete a row
+  function deleteRow(rowIndex) {
+    if (confirm("Are you sure you want to delete this reservation?")) {
+      fetch(`${scriptUrl}?action=delete&rowIndex=${rowIndex}`, { method: 'POST' })
+        .then(response => response.text())
+        .then(result => {
+          if (result === "Deleted") {
+            alert("Reservation deleted successfully!");
+            loadTableData(); // Reload table
+          } else {
+            alert("Error deleting row: " + result);
+          }
+        })
+        .catch(error => console.error('Error deleting:', error));
+    }
+  }
+
+  // Load the table automatically when the page opens
+  window.onload = loadTableData;
+</script></body>
 </html>
